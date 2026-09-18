@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ujian Informatika - SMPN 1 Gunungguruh</title>
-<!-- Menggunakan Tailwind CSS CDN resmi agar langsung berjalan -->
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 body,html{height:100%;margin:0;font-family:Inter,Arial,sans-serif}
@@ -16,13 +15,11 @@ button,input,select,textarea{outline:none}
 </style>
 </head>
 <body class="h-full bg-sky-50">
-<div id="app" class="h-full"></div>
+<div id="app" class="h-full flex items-center justify-center p-4">
+  <div class="text-slate-500 font-medium">Menghubungkan ke server...</div>
+</div>
 
 <script>
-// ============================================================
-// APLIKASI UJIAN + PANEL ADMIN MINIMALIS
-// GANTI DENGAN URL WEB APP APPS SCRIPT ANDA
-// ============================================================
 const API_URL = "https://script.google.com/macros/s/AKfycbwT5sKAKIP0hAbrcwF8ThTwe2MvbxEezMQ5WuUUbHHRut4thq-GQuSmb8E6xkOCMZD6Qw/exec";
 
 const config = {
@@ -43,24 +40,64 @@ function formatTime(s){let m=Math.floor(s/60),d=s%60;return `${m}:${d.toString()
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
 async function apiGet(action,params={}){
-  const q=new URLSearchParams({action,...params});
-  const r=await fetch(`${API_URL}?${q.toString()}`);
-  return await r.json();
+  try {
+    const q=new URLSearchParams({action,...params});
+    const r=await fetch(`${API_URL}?${q.toString()}`);
+    return await r.json();
+  } catch(e) {
+    console.error("API GET Error:", e);
+    return { error: true, data: [] };
+  }
 }
+
 async function apiPost(data){
-  const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(data)});
-  return await r.json();
+  try {
+    const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(data)});
+    return await r.json();
+  } catch(e) {
+    console.error("API POST Error:", e);
+    return { success: false, error: "Koneksi jaringan gagal." };
+  }
 }
 
 // ---------------- START ----------------
 async function showStart(){
   state.screen="start";
   state.student=null; state.ujian=null; state.questions=[]; state.answers=[];
-  const uj=await apiGet("ujian");
-  const aktif=(uj.data||[]).filter(x=>String(x.STATUS).toUpperCase()==="AKTIF");
-  state.adminData.ujian=aktif;
+  
+  let aktif = [];
+  let isError = false;
+  try {
+    const uj = await apiGet("ujian");
+    if(uj.error) isError = true;
+    aktif = (uj.data || []).filter(x => String(x.STATUS).toUpperCase() === "AKTIF");
+  } catch(e) {
+    isError = true;
+  }
+  
+  state.adminData.ujian = aktif;
+  
+  if(isError || window.location.protocol === "file:") {
+    $("app").innerHTML=`
+    <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg text-center">
+      <div class="text-4xl mb-3">⚠️</div>
+      <h2 class="text-xl font-bold text-red-600 mb-2">Terkendala Akses Lokal (CORS)</h2>
+      <p class="text-slate-600 text-sm mb-4">Aplikasi mendeteksi Anda membuka file ini langsung dari komputer (<code class="bg-slate-100 p-1 rounded">file:///</code>). Browser melarang koneksi langsung ke Google Apps Script dari cara ini.</p>
+      <div class="bg-blue-50 text-blue-800 text-sm p-4 rounded-xl text-left space-y-2 mb-5">
+        <b>Cara Mengatasinya:</b>
+        <ol class="list-decimal pl-4 space-y-1">
+          <li>Gunakan <b>VS Code</b>.</li>
+          <li>Install ekstensi <b>Live Server</b>.</li>
+          <li>Klik kanan file HTML ini, lalu pilih <b>"Open with Live Server"</b>.</li>
+        </ol>
+      </div>
+      <button onclick="showStart()" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold text-sm">Coba Muat Ulang</button>
+    </div>`;
+    return;
+  }
+
   $("app").innerHTML=`
-  <div class="min-h-full flex items-center justify-center p-4">
+  <div class="min-h-full flex items-center justify-center p-4 w-full">
     <div class="bg-white rounded-2xl shadow-xl p-7 w-full max-w-md relative">
       <button onclick="openAdminLogin()" class="absolute top-4 right-4 text-xs text-slate-400 hover:text-blue-600">Admin</button>
       <div class="text-center mb-6">
@@ -68,22 +105,23 @@ async function showStart(){
         <h1 class="text-2xl font-bold">${esc(config.school_name)}</h1>
         <p class="text-slate-500">${esc(config.subject_info)}</p>
       </div>
-      <label class="font-semibold">NIS</label>
+      <label class="font-semibold text-sm text-slate-700">NIS</label>
       <div class="flex gap-2 mt-2 mb-4">
-        <input id="nis" class="border rounded-lg p-3 flex-1" placeholder="Masukkan NIS">
-        <button onclick="cariSiswa()" class="px-4 rounded-lg bg-slate-100 hover:bg-slate-200">Cari</button>
+        <input id="nis" class="border rounded-lg p-3 flex-1 text-sm" placeholder="Masukkan NIS">
+        <button onclick="cariSiswa()" class="px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-medium">Cari</button>
       </div>
       <div id="studentInfo" class="hidden bg-blue-50 rounded-lg p-3 mb-4 text-sm"></div>
-      <label class="font-semibold">Ujian</label>
-      <select id="ujian" class="w-full border rounded-lg p-3 mt-2 mb-5">
+      <label class="font-semibold text-sm text-slate-700">Ujian</label>
+      <select id="ujian" class="w-full border rounded-lg p-3 mt-2 mb-5 text-sm bg-white">
         <option value="">Pilih ujian</option>
         ${aktif.map(x=>`<option value="${esc(x.ID_UJIAN)}">${esc(x.NAMA_UJIAN)} — ${esc(x.KELAS)} —${esc(x.BAB)}</option>`).join("")}
       </select>
-      <button onclick="mulaiUjian()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold">Mulai Ujian</button>
+      <button onclick="mulaiUjian()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold text-sm">Mulai Ujian</button>
     </div>
   </div>`;
 }
 
+// Bagian fungsi bawah tetap sama seperti sebelumnya...
 async function cariSiswa(){
   const nis=$("nis").value.trim(); if(!nis)return alert("Masukkan NIS.");
   const r=await apiGet("cariSiswa",{nis});
@@ -105,7 +143,6 @@ async function mulaiUjian(){
   if(uj.JUMLAH_SOAL)qs=qs.slice(0,Number(uj.JUMLAH_SOAL));
   
   qs=shuffle(qs).map(q=>{
-    // Mendukung format array options atau kolom terpisah OPSI_A/B/C/D dari Google Sheets
     const rawOpts = q.options || [q.OPSI_A, q.OPSI_B, q.OPSI_C, q.OPSI_D];
     const opts=shuffle([
       {t:rawOpts[0],k:"A"},{t:rawOpts[1],k:"B"},
@@ -143,7 +180,7 @@ function nav(d){if(state.locked)return;const n=state.current+d;if(n>=0&&n<state.
 function renderExam(){
   const q=state.questions[state.current];
   $("app").innerHTML=`
-  <div class="h-full flex flex-col bg-sky-50">
+  <div class="h-full flex flex-col bg-sky-50 w-full">
     <header class="bg-white shadow p-4 flex justify-between items-center">
       <div><b>${esc(state.student.NAMA)}</b><div class="text-xs text-slate-500">Kelas ${esc(state.student.KELAS)} • ${esc(state.ujian.NAMA_UJIAN)}</div></div>
       <div class="text-right"><div id="timer" class="font-bold text-xl text-blue-600">${formatTime(state.timeLeft)}</div><small class="text-xs text-slate-400">Waktu tersisa</small></div>
@@ -153,11 +190,11 @@ function renderExam(){
       <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow p-6">
         <div class="flex gap-3 mb-5"><span class="bg-blue-600 text-white px-3.5 py-1 rounded-lg font-bold h-fit">${state.current+1}</span><p class="font-semibold text-slate-800">${esc(q.PERTANYAAN || q.question)}</p></div>
         <div class="space-y-3">
-        ${q.options.map((o,i)=>{const s=state.answers[state.current]===i;return `<button onclick="selectAnswer(${i})" class="option w-full text-left p-3.5 border-2 rounded-xl ${s?"bg-blue-600 text-white border-blue-600":"border-slate-200 hover:border-blue-400"}"><b>${String.fromCharCode(65+i)}.</b> ${esc(o)}</button>`}).join("")}
+        ${q.options.map((o,i)=>{const s=state.answers[state.current]===i;return `<button onclick="selectAnswer(${i})" class="option w-full text-left p-3.5 border-2 rounded-xl text-sm ${s?"bg-blue-600 text-white border-blue-600":"border-slate-200 hover:border-blue-400"}"><b>${String.fromCharCode(65+i)}.</b> ${esc(o)}</button>`}).join("")}
         </div>
         <div class="flex justify-between mt-7">
-          <button onclick="nav(-1)" class="px-4 py-2 rounded-lg border ${state.current===0?"opacity-40":""}">← Sebelumnya</button>
-          ${state.current===state.questions.length-1?'<button onclick="submitExam()" class="px-5 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold">Selesai & Kirim</button>':'<button onclick="nav(1)" class="px-5 py-2 rounded-lg bg-blue-600 text-white font-bold">Selanjutnya →</button>'}
+          <button onclick="nav(-1)" class="px-4 py-2 rounded-lg border text-sm ${state.current===0?"opacity-40":""}">← Sebelumnya</button>
+          ${state.current===state.questions.length-1?'<button onclick="submitExam()" class="px-5 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold text-sm">Selesai & Kirim</button>':'<button onclick="nav(1)" class="px-5 py-2 rounded-lg bg-blue-600 text-white font-bold text-sm">Selanjutnya →</button>'}
         </div>
       </div>`}
     </main>
@@ -185,12 +222,12 @@ async function submitExam(){
 }
 
 function renderResult(){
-  $("app").innerHTML=`<div class="min-h-full flex items-center justify-center p-4">
+  $("app").innerHTML=`<div class="min-h-full flex items-center justify-center p-4 w-full">
     <div class="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
       <div class="text-5xl">🎉</div><h1 class="text-2xl font-bold mt-3">Ujian Selesai</h1>
       <p class="text-slate-500 mt-2">${esc(state.student.NAMA)}</p>
       <div class="grid grid-cols-2 gap-3 my-6"><div class="bg-blue-50 p-4 rounded-xl"><b class="text-4xl text-blue-600">${state.finalScore}</b><div class="text-sm text-slate-500">Nilai</div></div><div class="bg-green-50 p-4 rounded-xl"><b class="text-4xl text-green-600">${state.correct}</b><div class="text-sm text-slate-500">Benar</div></div></div>
-      <button onclick="showStart()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold">Kembali</button>
+      <button onclick="showStart()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold text-sm">Kembali</button>
     </div></div>`;
 }
 
@@ -200,8 +237,8 @@ function openAdminLogin(){
     <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
       <div class="flex justify-between items-center"><h2 class="font-bold text-lg">Panel Admin</h2><button onclick="closeAdminLogin()">✕</button></div>
       <p class="text-sm text-slate-500 mt-1">Masukkan PIN admin.</p>
-      <input id="adminPin" type="password" class="w-full border rounded-lg p-3 mt-4" placeholder="PIN">
-      <button onclick="loginAdmin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg mt-3 font-bold">Masuk</button>
+      <input id="adminPin" type="password" class="w-full border rounded-lg p-3 mt-4 text-sm" placeholder="PIN">
+      <button onclick="loginAdmin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg mt-3 font-bold text-sm">Masuk</button>
     </div></div>`);
 }
 function closeAdminLogin(){$("adminModal")?.remove()}
@@ -217,14 +254,14 @@ async function renderAdmin(){
   state.screen="admin";
   if(!state.admin)return showStart();
   const d=state.adminData;
-  $("app").innerHTML=`<div class="h-full flex bg-slate-100">
+  $("app").innerHTML=`<div class="h-full flex bg-slate-100 w-full">
     <aside class="w-56 bg-slate-900 text-white p-4 hidden md:block">
       <h2 class="font-bold mb-6 tracking-wide text-sm text-slate-400">ADMIN PANEL</h2>
       ${["dashboard","siswa","soal","ujian","hasil","pengaturan"].map(t=>`<button onclick="adminTab('${t}')" class="w-full text-left px-3 py-2 rounded-lg mb-1 text-sm ${state.adminTab===t?"bg-blue-600":"hover:bg-slate-800"}">${({dashboard:"▦ Dashboard",siswa:"👥 Siswa",soal:"📝 Bank Soal",ujian:"📋 Ujian",hasil:"📊 Hasil",pengaturan:"⚙ Pengaturan"})[t]}</button>`).join("")}
       <button onclick="state.admin=false;showStart()" class="w-full text-left px-3 py-2 mt-5 text-sm text-slate-400 hover:text-white">← Keluar</button>
     </aside>
     <main class="flex-1 overflow-auto p-4 md:p-7">
-      <div class="md:hidden mb-4"><select onchange="adminTab(this.value)" class="border rounded-lg p-2 bg-white">${["dashboard","siswa","soal","ujian","hasil","pengaturan"].map(t=>`<option ${state.adminTab===t?"selected":""}>${t}</option>`).join("")}</select></div>
+      <div class="md:hidden mb-4"><select onchange="adminTab(this.value)" class="border rounded-lg p-2 bg-white text-sm">${["dashboard","siswa","soal","ujian","hasil","pengaturan"].map(t=>`<option ${state.adminTab===t?"selected":""}>${t}</option>`).join("")}</select></div>
       <div id="adminContent"></div>
     </main>
   </div>`;
@@ -304,7 +341,7 @@ async function deleteRecord(key,row){
 
 function renderPengaturan(){
   const p=state.adminData.pengaturan||{};
-  $("adminContent").innerHTML=`<div class="flex justify-between items-center mb-4"><h1 class="text-2xl font-bold text-slate-800">Pengaturan</h1><button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Simpan</button></div><div class="bg-white rounded-xl p-5 shadow-sm max-w-2xl space-y-4">${Object.keys(p).map(k=>`<label class="block text-sm font-semibold text-slate-700">${esc(k)}<input id="set_${esc(k)}" class="w-full border rounded-lg p-2.5 mt-1 text-sm" value="${esc(p[k])}"></label>`).join("")}</div>`;
+  $("adminContent").innerHTML=`<div class="flex justify-between items-center mb-4"><h1 class="text-2xl font-bold text-slate-800">Pengaturan</h1><button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Simpan</button></div><div class="bg-white rounded-xl p-5 shadow-sm max-w-2xl space-y-4">${Object.keys(p).map(k=>`<div><label class="block text-sm font-semibold text-slate-700 mb-1">${esc(k)}</label><input id="set_${esc(k)}" class="w-full border rounded-lg p-2.5 text-sm" value="${esc(p[k])}"></div>`).join("")}</div>`;
 }
 
 async function saveSettings(){

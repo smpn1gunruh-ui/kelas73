@@ -1,192 +1,321 @@
 <!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ujian Informatika Kelas 7 (Bab 1 - Berpikir Komputasional)</title>
-  <script src="tailwind.js"></script>
-  <style>
-    body, html { height: 100%; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-    .question-card { transition: all 0.3s ease; }
-    .option-button { transition: all 0.2s ease; }
-    .option-button:hover { transform: translateX(4px); }
-    .timer-warning { animation: pulse 1s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.7;} }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ujian Informatika - SMPN 1 Gunungguruh</title>
+<!-- Menggunakan Tailwind CSS CDN resmi agar langsung berjalan -->
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body,html{height:100%;margin:0;font-family:Inter,Arial,sans-serif}
+button,input,select,textarea{outline:none}
+.card{transition:.2s}.option{transition:.15s}.option:hover{transform:translateX(3px)}
+.timer-warning{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.modal-bg{background:rgba(15,23,42,.55)}
+</style>
 </head>
 <body class="h-full bg-sky-50">
-  <div id="app" class="h-full"></div>
+<div id="app" class="h-full"></div>
 
-  <script>
-    // ===================== KONFIGURASI =====================
-    const config = {
-      exam_title: "Penilaian Bab 1 - Berpikir Komputasional",
-      school_name: "SMP Negeri 1 Gunungguruh",
-      subject_info: "Informatika Kelas 7",
-      background_color: "#f0f9ff"
-    };
+<script>
+// ============================================================
+// APLIKASI UJIAN + PANEL ADMIN MINIMALIS
+// GANTI DENGAN URL WEB APP APPS SCRIPT ANDA
+// ============================================================
+const API_URL = "https://script.google.com/macros/s/AKfycbwT5sKAKIP0hAbrcwF8ThTwe2MvbxEezMQ5WuUUbHHRut4thq-GQuSmb8E6xkOCMZD6Qw/exec";
 
-    // ===================== SOAL BAB 1 =====================
-    let questions = [
-      {question:"Apa yang dimaksud dengan berpikir komputasional?",options:[
-        "Cara berpikir menggunakan komputer untuk menyelesaikan masalah",
-        "Cara berpikir logis dan sistematis dalam memecahkan masalah",
-        "Cara berpikir untuk menghafal kode program",
-        "Cara berpikir dengan meniru komputer"],correct:1},
-      {question:"Langkah pertama dalam berpikir komputasional adalah...",options:[
-        "Abstraksi","Pengenalan pola","Dekomposisi","Membuat algoritma"],correct:2},
-      {question:"Apa yang dimaksud dengan dekomposisi?",options:[
-        "Mengabaikan hal-hal yang tidak penting",
-        "Menggabungkan semua bagian masalah",
-        "Mengenali pola-pola dalam masalah",
-        "Memecah masalah besar menjadi bagian-bagian kecil"],correct:3},
-      {question:"Tujuan dari mengenali pola (pattern recognition) adalah...",options:[
-        "Membuat algoritma lebih panjang",
-        "Menemukan kesamaan untuk mempermudah penyelesaian masalah",
-        "Menghapus data yang tidak relevan",
-        "Meningkatkan kecepatan komputer"],correct:1},
-      {question:"Abstraksi dalam berpikir komputasional berarti...",options:[
-        "Menghapus semua data",
-        "Menambahkan detail kecil pada masalah",
-        "Mengabaikan detail yang tidak penting dan fokus pada inti masalah",
-        "Membuat algoritma tanpa berpikir"],correct:2},
-      {question:"Apa itu algoritma?",options:[
-        "Bahasa pemrograman untuk komputer",
-        "Langkah-langkah logis untuk menyelesaikan masalah",
-        "Hasil akhir dari berpikir komputasional",
-        "Urutan angka dan huruf"],correct:1},
-      {question:"Contoh penerapan berpikir komputasional dalam kehidupan sehari-hari adalah...",options:[
-        "Menyalin pekerjaan teman",
-        "Menyusun langkah-langkah memasak makanan",
-        "Menggambar tanpa rencana",
-        "Menebak jawaban tanpa berpikir"],correct:1},
-      {question:"Langkah terakhir dalam berpikir komputasional adalah...",options:[
-        "Menganalisis pola",
-        "Membuat algoritma atau solusi",
-        "Melakukan dekomposisi ulang",
-        "Menghapus abstraksi"],correct:1},
-      {question:"Berikut ini yang bukan termasuk komponen berpikir komputasional adalah...",options:[
-        "Dekomposisi","Abstraksi","Pengenalan pola","Menghafal perintah komputer"],correct:3},
-      {question:"Mengapa berpikir komputasional penting dipelajari?",options:[
-        "Agar siswa dapat menjadi ahli komputer",
-        "Agar dapat memecahkan masalah dengan cara sistematis dan efisien",
-        "Agar dapat membuat robot",
-        "Agar dapat menggunakan internet dengan cepat"],correct:1}
-    ];
-
-    // ===================== FUNGSI ACAK =====================
-    function shuffleArray(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    }
-
-    function shuffleQuestions() {
-      questions = shuffleArray(questions.map(q => {
-        const opts = q.options.map((o, i) => ({text: o, isCorrect: i === q.correct}));
-        const shuffled = shuffleArray(opts);
-        return {
-          question: q.question,
-          options: shuffled.map(o => o.text),
-          correct: shuffled.findIndex(o => o.isCorrect)
-        };
-      }));
-    }
-
-    // ===================== STATE GLOBAL =====================
-    let state = {
-      screen: 'start',
-      studentName: '',
-      studentClass: '',
-      current: 0,
-      answers: new Array(questions.length).fill(null),
-      timeLeft: 600,
-      timer: null,
-      locked: false
-    };
-
-    // ===================== UTILITAS =====================
-    function formatTime(s){const m=Math.floor(s/60),sec=s%60;return `${m}:${sec.toString().padStart(2,'0')}`;}
-    function startTimer(){state.timer=setInterval(()=>{state.timeLeft--;const t=document.getElementById('timer');if(t){t.textContent=formatTime(state.timeLeft);if(state.timeLeft<=60)t.classList.add('timer-warning');}if(state.timeLeft<=0){clearInterval(state.timer);submitExam();}},1000);}
-    async function goFullScreen(){if(document.documentElement.requestFullscreen){await document.documentElement.requestFullscreen();}}
-    document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&state.screen==="exam"){alert("Anda keluar dari mode full screen! Ujian dikunci.");state.locked=true;clearInterval(state.timer);render();}});
-
-    function selectAnswer(i){if(!state.locked){state.answers[state.current]=i;render();}}
-    function navigate(d){if(!state.locked){const n=state.current+d;if(n>=0&&n<questions.length)state.current=n;render();}}
-    function calculateScore(){let correct=0;state.answers.forEach((ans,i)=>{if(ans===questions[i].correct)correct++;});return Math.round((correct/questions.length)*100);}
-
-    // ===================== SIMPAN OTOMATIS KE SPREADSHEET =====================
-    function submitExam(){
-      clearInterval(state.timer);
-      const score = calculateScore();
-      const correct = state.answers.filter((a,i)=>a===questions[i].correct).length;
-const data = {
-  name: state.studentName,
-  class: state.studentClass,
-  score,
-  correct,
-  total: questions.length,
-  date: new Date().toLocaleString(),
-  bab: "Bab 1 - Berpikir Komputasional" // tambahkan baris ini
+const config = {
+  school_name: "SMP Negeri 1 Gunungguruh",
+  subject_info: "Informatika Kelas 7"
 };
 
-      // Tetap simpan lokal
-      const saved = JSON.parse(localStorage.getItem('hasilUjian') || "[]");
-      saved.push(data);
-      localStorage.setItem('hasilUjian', JSON.stringify(saved));
+let state = {
+  screen:"start", student:null, ujian:null, questions:[], answers:[],
+  current:0, timeLeft:600, timer:null, locked:false,
+  finalScore:0, correct:0, idHasil:"",
+  admin:false, adminTab:"dashboard", adminData:{}, adminSearch:""
+};
 
-      // 🔄 Kirim otomatis ke Google Spreadsheet
-      fetch("https://script.google.com/macros/s/AKfycbzVTgd56dfUMSHugbPkAJlMIpWJ0RDFI8frj4u4hxFSQRWwgDiXAO45WlssyL-KReBwwA/exec", { // GANTI DENGAN URL MILIKMU
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+const $ = id => document.getElementById(id);
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function formatTime(s){let m=Math.floor(s/60),d=s%60;return `${m}:${d.toString().padStart(2,"0")}`}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
-      // Tampilkan hasil akhir
-      state.screen = 'result';
-      state.finalScore = score;
-      state.correct = correct;
-      render();
-    }
+async function apiGet(action,params={}){
+  const q=new URLSearchParams({action,...params});
+  const r=await fetch(`${API_URL}?${q.toString()}`);
+  return await r.json();
+}
+async function apiPost(data){
+  const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(data)});
+  return await r.json();
+}
 
-    // ===================== RENDER =====================
-    function render(){
-      const app=document.getElementById('app'),s=config;
-      if(state.screen==='start'){
-        app.innerHTML=`<div class='flex h-full items-center justify-center bg-[${s.background_color}] p-4'><div class='max-w-md w-full bg-white p-8 rounded-2xl shadow-xl'><h1 class='text-2xl font-bold text-center mb-2'>${s.exam_title}</h1><p class='text-center mb-1'>${s.school_name}</p><p class='text-center mb-6'>${s.subject_info}</p><div class='mb-4'><label class='font-semibold'>Nama Siswa</label><input id='name' type='text' class='w-full border rounded-lg p-3 mt-2' placeholder='Nama lengkap'></div><div class='mb-6'><label class='font-semibold'>Kelas</label><select id='class' class='w-full border rounded-lg p-3 mt-2'><option value=''>Pilih Kelas</option><option>7.1</option><option>7.2</option><option>7.3</option><option>7.4</option><option>7.5</option><option>7.6</option><option>7.7</option></select></div><button id='start' class='w-full bg-blue-500 text-white py-3 rounded-lg font-bold hover:bg-blue-600'>Mulai Ujian</button></div></div>`;
-        document.getElementById('start').onclick=async()=>{
-          const n=document.getElementById('name').value.trim();
-          const c=document.getElementById('class').value;
-          if(!n||!c)return alert('Isi nama dan kelas terlebih dahulu!');
-          state.studentName=n;state.studentClass=c;
-          shuffleQuestions();
-          await goFullScreen();
-          state.screen='exam';state.timeLeft=600;state.locked=false;
-          startTimer();render();
-        };
-      }
+// ---------------- START ----------------
+async function showStart(){
+  state.screen="start";
+  state.student=null; state.ujian=null; state.questions=[]; state.answers=[];
+  const uj=await apiGet("ujian");
+  const aktif=(uj.data||[]).filter(x=>String(x.STATUS).toUpperCase()==="AKTIF");
+  state.adminData.ujian=aktif;
+  $("app").innerHTML=`
+  <div class="min-h-full flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl p-7 w-full max-w-md relative">
+      <button onclick="openAdminLogin()" class="absolute top-4 right-4 text-xs text-slate-400 hover:text-blue-600">Admin</button>
+      <div class="text-center mb-6">
+        <div class="text-4xl mb-2">💻</div>
+        <h1 class="text-2xl font-bold">${esc(config.school_name)}</h1>
+        <p class="text-slate-500">${esc(config.subject_info)}</p>
+      </div>
+      <label class="font-semibold">NIS</label>
+      <div class="flex gap-2 mt-2 mb-4">
+        <input id="nis" class="border rounded-lg p-3 flex-1" placeholder="Masukkan NIS">
+        <button onclick="cariSiswa()" class="px-4 rounded-lg bg-slate-100 hover:bg-slate-200">Cari</button>
+      </div>
+      <div id="studentInfo" class="hidden bg-blue-50 rounded-lg p-3 mb-4 text-sm"></div>
+      <label class="font-semibold">Ujian</label>
+      <select id="ujian" class="w-full border rounded-lg p-3 mt-2 mb-5">
+        <option value="">Pilih ujian</option>
+        ${aktif.map(x=>`<option value="${esc(x.ID_UJIAN)}">${esc(x.NAMA_UJIAN)} — ${esc(x.KELAS)} —${esc(x.BAB)}</option>`).join("")}
+      </select>
+      <button onclick="mulaiUjian()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold">Mulai Ujian</button>
+    </div>
+  </div>`;
+}
 
-      else if(state.screen==='exam'){
-        const q=questions[state.current];
-        app.innerHTML=`<div class='flex flex-col h-full bg-[${s.background_color}]'><div class='p-4 bg-white shadow flex justify-between items-center'><div><h2 class='font-bold'>${state.studentName}</h2><p class='text-sm'>Kelas ${state.studentClass} • Soal ${state.current+1}/${questions.length}</p></div><div class='text-right'><div id='timer' class='font-bold text-blue-600 text-xl'>${formatTime(state.timeLeft)}</div><p class='text-sm text-slate-600'>Waktu tersisa</p></div></div><div class='flex-1 overflow-y-auto p-4'>${state.locked?`<div class='text-center mt-20 text-red-600 font-bold text-xl'>Ujian dikunci karena keluar dari fullscreen.</div>`:`<div class='max-w-3xl mx-auto bg-white p-6 rounded-xl shadow question-card'><div class='flex mb-4'><span class='bg-blue-500 text-white px-3 py-1 rounded-lg mr-3 font-bold'>${state.current+1}</span><p class='font-semibold'>${q.question}</p></div><div class='space-y-3'>${q.options.map((opt,i)=>{const sel=state.answers[state.current]===i;return `<button class='option-button w-full text-left p-3 border-2 rounded-lg ${sel?'bg-green-500 text-white border-green-600':'border-slate-300'}' data-i='${i}'><span class='font-bold'>${String.fromCharCode(65+i)}.</span> ${opt}</button>`;}).join('')}</div></div><div class='flex justify-between mt-6'><button id='prev' class='px-4 py-2 rounded-lg border border-blue-600 text-blue-700 font-semibold ${state.current===0?'opacity-50 cursor-not-allowed':''}'>← Sebelumnya</button>${state.current===questions.length-1?`<button id='submit' class='px-6 py-2 bg-green-600 text-white font-bold rounded-lg'>Selesai & Kirim</button>`:`<button id='next' class='px-6 py-2 bg-blue-600 text-white font-bold rounded-lg'>Selanjutnya →</button>`}</div>`}</div></div>`;
-        document.querySelectorAll('[data-i]')?.forEach(b=>b.onclick=()=>selectAnswer(parseInt(b.dataset.i)));
-        document.getElementById('prev')?.addEventListener('click',()=>navigate(-1));
-        document.getElementById('next')?.addEventListener('click',()=>navigate(1));
-        document.getElementById('submit')?.addEventListener('click',submitExam);
-      }
+async function cariSiswa(){
+  const nis=$("nis").value.trim(); if(!nis)return alert("Masukkan NIS.");
+  const r=await apiGet("cariSiswa",{nis});
+  const box=$("studentInfo");
+  if(!r.data?.ditemukan){box.classList.remove("hidden");box.innerHTML='<span class="text-red-600">NIS tidak ditemukan.</span>';state.student=null;return}
+  state.student=r.data.siswa;
+  box.classList.remove("hidden");
+  box.innerHTML=`<b>${esc(state.student.NAMA)}</b><br>Kelas: ${esc(state.student.KELAS)}<br>Status: ${esc(state.student.STATUS)}`;
+}
 
-      else if(state.screen==='result'){
-        const g=state.finalScore>=90?'A':state.finalScore>=80?'B':state.finalScore>=70?'C':'D';
-        const msg=g==='A'?'Luar biasa!':'Tetap semangat, belajar lagi ya!';
-        app.innerHTML=`<div class='flex items-center justify-center h-full bg-[${s.background_color}] p-4'><div class='bg-white p-8 rounded-2xl shadow-xl text-center max-w-md w-full'><h1 class='text-2xl font-bold mb-3'>Ujian Selesai!</h1><p class='mb-6'>${msg}</p><div class='grid grid-cols-2 gap-4 mb-6'><div class='bg-blue-50 rounded-lg p-4'><div class='text-4xl font-bold text-blue-600'>${state.finalScore}</div><p>Nilai</p></div><div class='bg-green-50 rounded-lg p-4'><div class='text-4xl font-bold text-green-600'>${g}</div><p>Predikat</p></div></div><button id='finish' class='w-full bg-blue-600 text-white py-3 rounded-lg font-bold'>Tutup</button></div></div>`;
-        document.getElementById('finish').onclick=()=>{document.exitFullscreen();state.screen='start';render();};
-      }
-    }
+async function mulaiUjian(){
+  if(!state.student){await cariSiswa();if(!state.student)return}
+  const id=$("ujian").value;if(!id)return alert("Pilih ujian.");
+  const uj=(state.adminData.ujian||[]).find(x=>String(x.ID_UJIAN)===String(id));
+  if(!uj)return alert("Data ujian tidak ditemukan.");
+  
+  const r=await apiGet("soal",{bab:uj.BAB});
+  let qs=(r.data||[]);
+  if(uj.JUMLAH_SOAL)qs=qs.slice(0,Number(uj.JUMLAH_SOAL));
+  
+  qs=shuffle(qs).map(q=>{
+    // Mendukung format array options atau kolom terpisah OPSI_A/B/C/D dari Google Sheets
+    const rawOpts = q.options || [q.OPSI_A, q.OPSI_B, q.OPSI_C, q.OPSI_D];
+    const opts=shuffle([
+      {t:rawOpts[0],k:"A"},{t:rawOpts[1],k:"B"},
+      {t:rawOpts[2],k:"C"},{t:rawOpts[3],k:"D"}
+    ]);
+    return {...q, options:opts.map(o=>o.t), keys:opts.map(o=>o.k)};
+  });
 
-    render();
-  </script>
+  if(!qs.length)return alert("Belum ada soal aktif untuk bab "+uj.BAB);
+  state.ujian=uj;state.questions=qs;state.answers=new Array(qs.length).fill(null);
+  state.current=0;state.timeLeft=Number(uj.DURASI||10)*60;state.locked=false;
+  try{if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen()}catch(e){}
+  state.screen="exam";startTimer();renderExam();
+}
+
+function startTimer(){
+  clearInterval(state.timer);
+  state.timer=setInterval(()=>{
+    state.timeLeft--;
+    const t=$("timer");if(t){t.textContent=formatTime(state.timeLeft);if(state.timeLeft<=60)t.classList.add("timer-warning")}
+    if(state.timeLeft<=0){clearInterval(state.timer);submitExam()}
+  },1000);
+}
+
+document.addEventListener("fullscreenchange",()=>{
+  if(!document.fullscreenElement&&state.screen==="exam"&&!state.locked){
+    state.locked=true;clearInterval(state.timer);renderExam();
+    alert("Mode fullscreen ditinggalkan. Ujian dikunci.");
+  }
+});
+
+function selectAnswer(i){if(!state.locked){state.answers[state.current]=i;renderExam()}}
+function nav(d){if(state.locked)return;const n=state.current+d;if(n>=0&&n<state.questions.length){state.current=n;renderExam()}}
+
+function renderExam(){
+  const q=state.questions[state.current];
+  $("app").innerHTML=`
+  <div class="h-full flex flex-col bg-sky-50">
+    <header class="bg-white shadow p-4 flex justify-between items-center">
+      <div><b>${esc(state.student.NAMA)}</b><div class="text-xs text-slate-500">Kelas ${esc(state.student.KELAS)} • ${esc(state.ujian.NAMA_UJIAN)}</div></div>
+      <div class="text-right"><div id="timer" class="font-bold text-xl text-blue-600">${formatTime(state.timeLeft)}</div><small class="text-xs text-slate-400">Waktu tersisa</small></div>
+    </header>
+    <main class="flex-1 overflow-auto p-4">
+      ${state.locked?'<div class="max-w-xl mx-auto mt-20 bg-white p-8 rounded-2xl text-center shadow"><div class="text-5xl">🔒</div><h2 class="font-bold text-xl mt-3">Ujian Dikunci</h2><p class="text-slate-500">Ujian dihentikan karena fullscreen ditinggalkan.</p></div>':`
+      <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow p-6">
+        <div class="flex gap-3 mb-5"><span class="bg-blue-600 text-white px-3.5 py-1 rounded-lg font-bold h-fit">${state.current+1}</span><p class="font-semibold text-slate-800">${esc(q.PERTANYAAN || q.question)}</p></div>
+        <div class="space-y-3">
+        ${q.options.map((o,i)=>{const s=state.answers[state.current]===i;return `<button onclick="selectAnswer(${i})" class="option w-full text-left p-3.5 border-2 rounded-xl ${s?"bg-blue-600 text-white border-blue-600":"border-slate-200 hover:border-blue-400"}"><b>${String.fromCharCode(65+i)}.</b> ${esc(o)}</button>`}).join("")}
+        </div>
+        <div class="flex justify-between mt-7">
+          <button onclick="nav(-1)" class="px-4 py-2 rounded-lg border ${state.current===0?"opacity-40":""}">← Sebelumnya</button>
+          ${state.current===state.questions.length-1?'<button onclick="submitExam()" class="px-5 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold">Selesai & Kirim</button>':'<button onclick="nav(1)" class="px-5 py-2 rounded-lg bg-blue-600 text-white font-bold">Selanjutnya →</button>'}
+        </div>
+      </div>`}
+    </main>
+  </div>`;
+}
+
+async function submitExam(){
+  if(state.screen!=="exam"||state.locked)return;
+  clearInterval(state.timer);
+  let detail=[];
+  state.questions.forEach((q,i)=>{
+    const chosen=state.answers[i];
+    const letter=chosen===null?"":q.keys[chosen];
+    detail.push({idSoal: q.ID_SOAL || q.idSoal || "", jawaban: letter});
+  });
+  const r=await apiPost({
+    action:"submitUjian",idUjian:state.ujian.ID_UJIAN,idSiswa:state.student.ID_SISWA||"",
+    nis:state.student.NIS,name:state.student.NAMA,class:state.student.KELAS,
+    bab:state.ujian.BAB,jawaban:detail
+  });
+  if(!r.success)return alert(r.error||"Gagal menyimpan hasil.");
+  state.finalScore=r.nilai;state.correct=r.benar;state.idHasil=r.idHasil;state.screen="result";
+  try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}
+  renderResult();
+}
+
+function renderResult(){
+  $("app").innerHTML=`<div class="min-h-full flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
+      <div class="text-5xl">🎉</div><h1 class="text-2xl font-bold mt-3">Ujian Selesai</h1>
+      <p class="text-slate-500 mt-2">${esc(state.student.NAMA)}</p>
+      <div class="grid grid-cols-2 gap-3 my-6"><div class="bg-blue-50 p-4 rounded-xl"><b class="text-4xl text-blue-600">${state.finalScore}</b><div class="text-sm text-slate-500">Nilai</div></div><div class="bg-green-50 p-4 rounded-xl"><b class="text-4xl text-green-600">${state.correct}</b><div class="text-sm text-slate-500">Benar</div></div></div>
+      <button onclick="showStart()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold">Kembali</button>
+    </div></div>`;
+}
+
+// ---------------- ADMIN ----------------
+function openAdminLogin(){
+  document.body.insertAdjacentHTML("beforeend",`<div id="adminModal" class="fixed inset-0 modal-bg flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+      <div class="flex justify-between items-center"><h2 class="font-bold text-lg">Panel Admin</h2><button onclick="closeAdminLogin()">✕</button></div>
+      <p class="text-sm text-slate-500 mt-1">Masukkan PIN admin.</p>
+      <input id="adminPin" type="password" class="w-full border rounded-lg p-3 mt-4" placeholder="PIN">
+      <button onclick="loginAdmin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg mt-3 font-bold">Masuk</button>
+    </div></div>`);
+}
+function closeAdminLogin(){$("adminModal")?.remove()}
+
+async function loginAdmin(){
+  const pin=$("adminPin").value;
+  const r=await apiPost({action:"adminLogin",pin});
+  if(!r.success)return alert(r.error||"PIN salah.");
+  closeAdminLogin();state.admin=true;await renderAdmin();
+}
+
+async function renderAdmin(){
+  state.screen="admin";
+  if(!state.admin)return showStart();
+  const d=state.adminData;
+  $("app").innerHTML=`<div class="h-full flex bg-slate-100">
+    <aside class="w-56 bg-slate-900 text-white p-4 hidden md:block">
+      <h2 class="font-bold mb-6 tracking-wide text-sm text-slate-400">ADMIN PANEL</h2>
+      ${["dashboard","siswa","soal","ujian","hasil","pengaturan"].map(t=>`<button onclick="adminTab('${t}')" class="w-full text-left px-3 py-2 rounded-lg mb-1 text-sm ${state.adminTab===t?"bg-blue-600":"hover:bg-slate-800"}">${({dashboard:"▦ Dashboard",siswa:"👥 Siswa",soal:"📝 Bank Soal",ujian:"📋 Ujian",hasil:"📊 Hasil",pengaturan:"⚙ Pengaturan"})[t]}</button>`).join("")}
+      <button onclick="state.admin=false;showStart()" class="w-full text-left px-3 py-2 mt-5 text-sm text-slate-400 hover:text-white">← Keluar</button>
+    </aside>
+    <main class="flex-1 overflow-auto p-4 md:p-7">
+      <div class="md:hidden mb-4"><select onchange="adminTab(this.value)" class="border rounded-lg p-2 bg-white">${["dashboard","siswa","soal","ujian","hasil","pengaturan"].map(t=>`<option ${state.adminTab===t?"selected":""}>${t}</option>`).join("")}</select></div>
+      <div id="adminContent"></div>
+    </main>
+  </div>`;
+  await loadAdminData();renderAdminContent();
+}
+
+async function loadAdminData(){
+  const [siswa,soal,ujian,hasil,peng]=await Promise.all([
+    apiGet("siswa"),apiGet("soal"),apiGet("ujian"),apiGet("laporan"),apiGet("pengaturan")
+  ]);
+  state.adminData={siswa:siswa.data||[],soal:soal.data||[],ujian:ujian.data||[],hasil:hasil.data||[],pengaturan:peng.data||{}};
+}
+
+async function adminTab(t){state.adminTab=t;await renderAdmin()}
+
+function renderAdminContent(){
+  const c=$("adminContent"),d=state.adminData;
+  if(state.adminTab==="dashboard"){
+    const h=d.hasil||[],avg=h.length?Math.round(h.reduce((a,x)=>a+Number(x.NILAI||0),0)/h.length):0;
+    c.innerHTML=`<h1 class="text-2xl font-bold mb-5 text-slate-800">Dashboard</h1><div class="grid grid-cols-2 lg:grid-cols-4 gap-3">${[
+      ["Siswa",d.siswa.length,"👥"],["Soal",d.soal.length,"📝"],["Ujian",d.ujian.length,"📋"],["Rata-rata",avg,"📊"]
+    ].map(x=>`<div class="bg-white rounded-xl p-5 shadow-sm"><div>${x[2]}</div><b class="text-3xl mt-1 block">${x[1]}</b><div class="text-sm text-slate-500">${x[0]}</div></div>`).join("")}</div>
+    <div class="bg-white rounded-xl p-5 mt-5 shadow-sm"><h2 class="font-bold mb-3 text-slate-800">Menu Cepat</h2><div class="flex flex-wrap gap-2">${["siswa","soal","ujian","hasil"].map(x=>`<button onclick="adminTab('${x}')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-sm rounded-lg font-medium">Kelola ${x}</button>`).join("")}</div></div>`;
+    return;
+  }
+  if(state.adminTab==="pengaturan"){renderPengaturan();return}
+  const key=state.adminTab, arr=d[key]||[];
+  const cols=key==="siswa"?["ID_SISWA","NIS","NAMA","KELAS","STATUS"]:
+    key==="soal"?["ID_SOAL","BAB","PERTANYAAN","KUNCI","BOBOT","STATUS"]:
+    key==="ujian"?["ID_UJIAN","NAMA_UJIAN","MAPEL","KELAS","BAB","DURASI","JUMLAH_SOAL","STATUS"]:
+    ["ID_HASIL","NIS","NAMA","KELAS","BAB","BENAR","SALAH","NILAI","PREDIKAT","STATUS","TANGGAL"];
+  c.innerHTML=`<div class="flex flex-wrap gap-2 justify-between items-center mb-4"><h1 class="text-2xl font-bold capitalize text-slate-800">Kelola ${key}</h1><div class="flex gap-2"><input id="adminSearch" oninput="filterAdmin()" class="border rounded-lg p-2 text-sm bg-white" placeholder="Cari..."><button onclick="newRecord('${key}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm rounded-lg font-medium">+ Tambah</button></div></div>
+  <div class="bg-white rounded-xl shadow-sm overflow-auto"><table class="w-full text-sm"><thead class="bg-slate-50 text-slate-600"><tr>${cols.map(x=>`<th class="text-left p-3 whitespace-nowrap">${x}</th>`).join("")}<th class="p-3">Aksi</th></tr></thead><tbody id="adminRows"></tbody></table></div>`;
+  drawRows(key,cols,arr);
+}
+
+function drawRows(key,cols,arr){
+  const rows=$("adminRows");if(!rows)return;
+  rows.innerHTML=arr.map((r,i)=>`<tr class="border-t hover:bg-slate-50"><td class="p-3">${cols.map(x=>`<div class="whitespace-nowrap max-w-xs overflow-hidden text-ellipsis ${x==="PERTANYAAN"?"max-w-md":""}" title="${esc(r[x])}">${esc(r[x])}</div>`).join("</td><td class='p-3'>")}<button onclick='editRecord(${JSON.stringify(key)},${JSON.stringify(r)})' class="text-blue-600 hover:underline mr-2 font-medium">Edit</button>${key!=="hasil"?`<button onclick='deleteRecord(${JSON.stringify(key)},${JSON.stringify(r)})' class="text-red-600 hover:underline font-medium">Hapus</button>`:""}</td></tr>`).join("")||`<tr><td colspan="${cols.length+1}" class="p-6 text-center text-slate-400">Belum ada data.</td></tr>`;
+}
+
+function filterAdmin(){
+  const q=($("adminSearch")?.value||"").toLowerCase(),key=state.adminTab;
+  const arr=(state.adminData[key]||[]).filter(r=>JSON.stringify(r).toLowerCase().includes(q));
+  const cols=key==="siswa"?["ID_SISWA","NIS","NAMA","KELAS","STATUS"]:key==="soal"?["ID_SOAL","BAB","PERTANYAAN","KUNCI","BOBOT","STATUS"]:key==="ujian"?["ID_UJIAN","NAMA_UJIAN","MAPEL","KELAS","BAB","DURASI","JUMLAH_SOAL","STATUS"]:["ID_HASIL","NIS","NAMA","KELAS","BAB","BENAR","SALAH","NILAI","PREDIKAT","STATUS","TANGGAL"];
+  drawRows(key,cols,arr);
+}
+
+function fieldsFor(key){
+  if(key==="siswa")return ["ID_SISWA","NIS","NAMA","KELAS","STATUS"];
+  if(key==="soal")return ["ID_SOAL","BAB","PERTANYAAN","OPSI_A","OPSI_B","OPSI_C","OPSI_D","KUNCI","BOBOT","STATUS"];
+  if(key==="ujian")return ["ID_UJIAN","NAMA_UJIAN","MAPEL","KELAS","BAB","DURASI","JUMLAH_SOAL","STATUS"];
+  return [];
+}
+
+function newRecord(key){editRecord(key,{});}
+
+function editRecord(key,row){
+  if(key==="hasil")return;
+  const fields=fieldsFor(key);
+  document.body.insertAdjacentHTML("beforeend",`<div id="editModal" class="fixed inset-0 modal-bg z-50 flex items-center justify-center p-4"><div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-auto p-6"><div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg capitalize">Edit ${key}</h2><button onclick="$('editModal').remove()">✕</button></div><div class="grid md:grid-cols-2 gap-3">${fields.map(f=>`<label class="text-sm font-semibold text-slate-700">${f}<input id="f_${f}" class="w-full border rounded-lg p-2.5 mt-1 text-sm" value="${esc(row[f]??"")}"></label>`).join("")}</div><div class="flex justify-end gap-2 mt-5"><button onclick="$('editModal').remove()" class="px-4 py-2 border rounded-lg text-sm">Batal</button><button onclick="saveRecord('${key}')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">Simpan</button></div></div></div>`);
+}
+
+async function saveRecord(key){
+  const data={};fieldsFor(key).forEach(f=>data[f]=$("f_"+f).value);
+  const r=await apiPost({action:"saveRecord",sheet:key,data});
+  if(!r.success)return alert(r.error||"Gagal menyimpan.");
+  $("editModal").remove();await renderAdmin();
+}
+
+async function deleteRecord(key,row){
+  if(!confirm("Hapus data ini?"))return;
+  const r=await apiPost({action:"deleteRecord",sheet:key,key:row[fieldsFor(key)[0]]});
+  if(!r.success)return alert(r.error||"Gagal menghapus.");
+  await renderAdmin();
+}
+
+function renderPengaturan(){
+  const p=state.adminData.pengaturan||{};
+  $("adminContent").innerHTML=`<div class="flex justify-between items-center mb-4"><h1 class="text-2xl font-bold text-slate-800">Pengaturan</h1><button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Simpan</button></div><div class="bg-white rounded-xl p-5 shadow-sm max-w-2xl space-y-4">${Object.keys(p).map(k=>`<label class="block text-sm font-semibold text-slate-700">${esc(k)}<input id="set_${esc(k)}" class="w-full border rounded-lg p-2.5 mt-1 text-sm" value="${esc(p[k])}"></label>`).join("")}</div>`;
+}
+
+async function saveSettings(){
+  const p=state.adminData.pengaturan||{},data={};
+  Object.keys(p).forEach(k=>data[k]=$("set_"+k).value);
+  const r=await apiPost({action:"saveSettings",data});
+  if(!r.success)return alert(r.error||"Gagal.");
+  alert("Pengaturan tersimpan.");await renderAdmin();
+}
+
+showStart();
+</script>
 </body>
 </html>
